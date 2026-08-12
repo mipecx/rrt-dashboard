@@ -15,7 +15,10 @@
 
       <!-- Форма -->
       <form @submit.prevent="handleLogin" class="space-y-5">
-        <div v-if="error" class="text-xs text-emergency bg-emergency/10 border border-emergency/20 p-3 rounded-default">
+        <div
+          v-if="error"
+          class="text-xs text-emergency bg-emergency/10 border border-emergency/20 p-3 rounded-default"
+        >
           {{ error }}
         </div>
 
@@ -59,6 +62,7 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/api'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router' // Импортируем хук роутера
 
@@ -74,7 +78,7 @@ const handleLogin = async () => {
     loading.value = true
     error.value = null
     try {
-      const response = await fetch('http://localhost:8080/api/v1/auth/login', {
+      const response = await apiFetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone.value, password: password.value }),
@@ -86,7 +90,7 @@ const handleLogin = async () => {
       // Сохраняем токены
       localStorage.setItem('access_token', data.access_token)
       localStorage.setItem('refresh_token', data.refresh_token)
-      
+
       router.push({ name: 'dashboard' })
     } catch (err) {
       error.value = err.message

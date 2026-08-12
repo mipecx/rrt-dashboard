@@ -246,7 +246,12 @@
           class="px-3 py-1.5 rounded-default text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors flex items-center gap-1 cursor-pointer shadow-md"
         >
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           Add Squad
         </button>
@@ -264,7 +269,10 @@
 
         <!-- РЕНДЕР RRT ЮНИТОВ -->
         <template v-else-if="currentTab === 'rrt'">
-          <div v-if="filteredRrtUnits.length === 0" class="text-xs text-data-gray text-center py-4 italic">
+          <div
+            v-if="filteredRrtUnits.length === 0"
+            class="text-xs text-data-gray text-center py-4 italic"
+          >
             Нет зарегистрированных RRT групп
           </div>
           <div
@@ -361,7 +369,10 @@
 
         <!-- РЕНДЕР ИНЦИДЕНТОВ -->
         <template v-else>
-          <div v-if="filteredIncidents.length === 0" class="text-xs text-data-gray text-center py-4 italic">
+          <div
+            v-if="filteredIncidents.length === 0"
+            class="text-xs text-data-gray text-center py-4 italic"
+          >
             Нет активных вызовов SOS
           </div>
           <div
@@ -380,8 +391,8 @@
                   incident.status === 'created'
                     ? 'bg-emergency text-white'
                     : incident.status === 'in_progress'
-                    ? 'bg-alert text-surface'
-                    : 'bg-success text-white',
+                      ? 'bg-alert text-surface'
+                      : 'bg-success text-white',
                 ]"
               >
                 {{ incident.status === 'created' ? 'NEW SOS' : incident.status }}
@@ -435,10 +446,7 @@
 
             <!-- Управление инцидентом (Назначен / Кнопки Arrive & Resolve) -->
             <div class="mt-3 pt-3 border-t border-surface-container-high space-y-2">
-              <div
-                v-if="incident.rrt_id || incident.assigned_rrt_id"
-                class="space-y-2"
-              >
+              <div v-if="incident.rrt_id || incident.assigned_rrt_id" class="space-y-2">
                 <div class="text-xs text-success flex items-center gap-1.5 font-bold">
                   <span class="h-1.5 w-1.5 rounded-full bg-success"></span>
                   Экипаж: {{ crewNameById(incident.rrt_id || incident.assigned_rrt_id) }}
@@ -585,7 +593,9 @@
               required
               class="w-full bg-surface-container border border-surface-container-high rounded-default px-3 py-2.5 text-xs text-on-surface focus:outline-none focus:border-success"
             >
-              <option value="33333333-3333-3333-3333-111111111111">Pattaya Central & Walking St</option>
+              <option value="33333333-3333-3333-3333-111111111111">
+                Pattaya Central & Walking St
+              </option>
               <option value="33333333-3333-3333-3333-222222222222">Jomtien Beach</option>
               <option value="33333333-3333-3333-3333-333333333333">Naklua & Wongamat</option>
             </select>
@@ -618,6 +628,8 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import AppMap from '../components/AppMap.vue'
 
+import { apiFetch } from '@/services/api'
+
 const router = useRouter()
 
 // Управление вкладками: 'dashboard', 'incidents', 'rrt'
@@ -646,12 +658,10 @@ const handleCreateRrt = async () => {
   creatingRrt.value = true
   createRrtError.value = null
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch('http://localhost:8080/api/v1/rrt', {
+    const response = await apiFetch('/rrt', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(newRrtForm.value),
     })
@@ -714,13 +724,22 @@ const getDispatcherInfo = () => {
   try {
     const base64Url = token.split('.')[1]
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-    }).join(''))
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        })
+        .join(''),
+    )
     const claims = JSON.parse(jsonPayload)
     // UUID дефолтных диспетчеров из seed.sql
-    const name = claims.uuid === '44444444-1111-1111-1111-111111111111' ? 'Somchai Jaidee' : 
-                 claims.uuid === '44444444-1111-1111-1111-222222222222' ? 'Kanya Raksa' : 'Dispatcher'
+    const name =
+      claims.uuid === '44444444-1111-1111-1111-111111111111'
+        ? 'Somchai Jaidee'
+        : claims.uuid === '44444444-1111-1111-1111-222222222222'
+          ? 'Kanya Raksa'
+          : 'Dispatcher'
     return { fullname: name, uuid: claims.uuid }
   } catch {
     return { fullname: 'Dispatcher' }
@@ -732,12 +751,7 @@ const dispatcherName = computed(() => getDispatcherInfo().fullname)
 // Загрузка инцидентов
 const fetchIncidents = async () => {
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch('http://localhost:8080/api/v1/incidents', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (!response.ok) throw new Error('Ошибка при получении инцидентов')
-    const data = await response.json()
+    const data = await apiFetch('/incidents')
     incidents.value = (Array.isArray(data) ? data : []).filter(
       (i) => i.status !== 'resolved' && i.status !== 'incident_resolved',
     )
@@ -751,12 +765,7 @@ const fetchIncidents = async () => {
 // Загрузка RRT юнитов
 const fetchRrtUnits = async () => {
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch('http://localhost:8080/api/v1/rrt', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    if (!response.ok) throw new Error('Ошибка при получении RRT')
-    const data = await response.json()
+    const data = await apiFetch('/rrt')
     rrtUnits.value = Array.isArray(data) ? data : []
   } catch (err) {
     console.error('Ошибка загрузки RRT юнитов:', err)
@@ -837,12 +846,10 @@ const assignCrew = async (incidentId) => {
   assignError.value = { ...assignError.value, [incidentId]: null }
 
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch(`http://localhost:8080/api/v1/incidents/${incidentId}/assign`, {
+    const response = await apiFetch(`/incidents/${incidentId}/assign`, {
       method: 'PUT',
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ rrt_id: crewId }),
     })
@@ -874,12 +881,10 @@ const assignCrew = async (incidentId) => {
 const markArrived = async (incidentId) => {
   actionLoading.value[incidentId] = 'arrive'
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch(`http://localhost:8080/api/v1/incidents/${incidentId}/arrive`, {
+    const response = await apiFetch(`/incidents/${incidentId}/arrive`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
     })
     if (!response.ok) throw new Error('Ошибка обновления статуса')
@@ -894,12 +899,10 @@ const markArrived = async (incidentId) => {
 const resolveIncident = async (incidentId) => {
   actionLoading.value[incidentId] = 'resolve'
   try {
-    const token = localStorage.getItem('access_token')
-    const response = await fetch(`http://localhost:8080/api/v1/incidents/${incidentId}/resolve`, {
+    const response = await apiFetch(`/incidents/${incidentId}/resolve`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
     })
     if (!response.ok) throw new Error('Ошибка закрытия инцидента')
